@@ -137,7 +137,7 @@ async fn handle_connection(
         debug!(%conn_id, %peer, req=?req, "parsed request");
 
         // Call application service
-        let resp = service.handle(req);
+        let resp = service.handle(req).await;
 
         debug!(%conn_id, %peer, resp=?resp, "sending response");
         write_jsonl(&mut write_half, &resp).await?;

@@ -29,10 +29,10 @@ impl BridgeService {
 
     /// Handle a single request and return a single response.
     /// Keeping this deterministic and pure-ish makes it easy to test.
-    pub fn handle(&self, req: ClientRequest) -> ServerResponse {
+    pub async fn handle(&self, req: ClientRequest) -> ServerResponse {
         match req {
             ClientRequest::Ping { id } => ServerResponse::Pong { id },
-            ClientRequest::ListIfaces => match self.discovery.list_can_ifaces() {
+            ClientRequest::ListIfaces => match self.discovery.list_can_ifaces().await {
                 Ok(items) => ServerResponse::Ifaces { items },
                 Err(e) => ServerResponse::Error {
                     message: format!("list_ifaces failed: {e}"),

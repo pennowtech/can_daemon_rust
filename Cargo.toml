@@ -23,7 +23,7 @@ tower = "0.5"
 # SocketCAN + netlink discovery
 socketcan = "3.5.0"
 rtnetlink = "0.14"
-netlink-packet-route = "0.20"
+netlink-packet-route = "0.19"
 
 # Replay (candump log parsing)
 regex = "1"

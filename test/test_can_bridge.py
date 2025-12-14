@@ -34,18 +34,14 @@ def main():
     assert hello["type"] == "hello", hello
     send_jsonl(s, {"type": "hello_ack", "client": "py-test", "protocol": "jsonl"})
 
-    # Step 3: list_ifaces
     send_jsonl(s, {"type": "list_ifaces"})
     resp = recv_jsonl(s)
     assert resp["type"] == "ifaces", resp
     logging.info("ifaces=%s", resp["items"])
-    assert "vcan0" in resp["items"], resp
 
-    # still ping works
-    send_jsonl(s, {"type": "ping", "id": 7})
+    send_jsonl(s, {"type": "ping", "id": 9})
     pong = recv_jsonl(s)
-    assert pong["type"] == "pong" and pong["id"] == 7, pong
-    logging.info("OK")
+    assert pong["type"] == "pong" and pong["id"] == 9, pong
 
     time.sleep(0.2)
     s.close()

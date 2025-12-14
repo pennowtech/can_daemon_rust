@@ -28,8 +28,8 @@ async fn main() -> Result<()> {
     let args = Args::parse();
     info!(bind=%args.bind, "can_bridge_daemon starting");
 
-    // Step 3: stub discovery
-    let discovery = Arc::new(infra::discovery_stub::StubDiscovery::new());
+    // interface discovery
+    let discovery = Arc::new(infra::discovery_netlink::NetlinkDiscovery::new());
 
     // Build application service (use-case layer).
     let service = app::BridgeService::new(discovery);
