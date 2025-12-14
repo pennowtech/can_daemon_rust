@@ -1,0 +1,51 @@
+[
+    {
+        "label": "Run App",
+        "command": "RUST_LOG=info cargo run -- --bind 127.0.0.1:9500",
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "shell": {
+            "with_arguments": {
+                "program": "/bin/bash",
+                "args": ["-lc"]
+            }
+        },
+        "reveal": "always",
+        "use_new_terminal": true
+    },
+    {
+        "label": "Run Test (WS+TCP+TX+RX)",
+        "command": "python3 test/test_can_bridge.py",
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "shell": {
+            "with_arguments": {
+                "program": "/bin/bash",
+                "args": ["-lc"]
+            }
+        },
+        "reveal": "always"
+    },
+    {
+        "label": "Build release binary",
+        "command": "cargo build --release",
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "shell": {
+            "with_arguments": {
+                "program": "/bin/bash",
+                "args": ["-lc"]
+            }
+        },
+        "reveal": "always"
+    },
+    {
+        "label": " App Test + Replay (spawns 2nd daemon)",
+        "command": "cargo build --release && ./test/test_can_bridge.py --bridge-bin ./target/release/can_bridge_daemon",
+        "cwd": "$ZED_WORKTREE_ROOT",
+        "shell": {
+            "with_arguments": {
+                "program": "/bin/bash",
+                "args": ["-lc"]
+            }
+        },
+        "reveal": "always"
+    }
+]
