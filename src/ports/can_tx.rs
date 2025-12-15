@@ -20,6 +20,8 @@ pub trait CanTxPort: Send + Sync {
         iface: String,
         id: u32,
         is_fd: bool,
+        brs: bool,
+        esi: bool,
         data: Vec<u8>,
     ) -> BoxFuture<'static, Result<()>>;
 }

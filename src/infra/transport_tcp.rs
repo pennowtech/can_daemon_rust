@@ -79,6 +79,7 @@ async fn handle_connection(
     stream: TcpStream,
     service: BridgeService,
 ) -> Result<()> {
+    // Split into reader and writer halves.
     let (read_half, write_half) = stream.into_split();
     let mut reader = BufReader::new(read_half);
 
@@ -91,7 +92,8 @@ async fn handle_connection(
     // Broadcast receiver for frames.
     let mut frames_rx = service.subscribe_frames();
 
-    // Writer task owns the write half.
+    // writer task -- writes responses and frame events to the socket
+    // based on subscriptions.
     let writer_handle = {
         let subscribed_ifaces = subscribed_ifaces.clone();
         tokio::spawn(async move {

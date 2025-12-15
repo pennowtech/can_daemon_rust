@@ -9,6 +9,7 @@
 //! - Standard file header. Keep stable to avoid churn.
 
 use std::sync::Arc;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use tokio::sync::broadcast;
 
@@ -89,6 +90,8 @@ impl BridgeService {
                 iface,
                 id,
                 is_fd,
+                brs,
+                esi,
                 data_hex,
             } => {
                 let data = match hex_to_bytes(&data_hex) {
@@ -103,7 +106,7 @@ impl BridgeService {
 
                 if let Err(e) = self
                     .can_tx
-                    .send(iface.clone(), id, is_fd, data.clone())
+                    .send(iface.clone(), id, is_fd, brs, esi, data.clone())
                     .await
                 {
                     return ServerResponse::SendAck {
@@ -116,7 +119,7 @@ impl BridgeService {
                 // Timestamp set by transport layer in Step 6; here we can leave it to
                 // the socketcan adapter later. For now, we publish with ts_ms=0 (or you can set now_ms).
                 self.publish_frame(FrameEvent {
-                    ts_ms: 0,
+                    ts_ms: now_ms(),
                     iface,
                     dir: crate::domain::frame::Direction::Tx,
                     id,
@@ -161,4 +164,12 @@ fn hex_to_bytes(s: &str) -> anyhow::Result<Vec<u8>> {
         out.push((hi << 4) | lo);
     }
     Ok(out)
+}
+
+/// Get current time in milliseconds since UNIX epoch.
+fn now_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0)
 }

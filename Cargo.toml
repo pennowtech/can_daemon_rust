@@ -27,3 +27,6 @@ netlink-packet-route = "0.19"
 
 # Replay (candump log parsing)
 regex = "1"
+
+# Needed for socket cache management: socketcan_tx.rs: `SocketCanTx`
+nix =  { version = "0.30.1", default-features = false, features = ["fs"] }

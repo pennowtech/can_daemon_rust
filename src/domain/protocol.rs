@@ -37,6 +37,15 @@ pub enum ClientRequest {
         iface: String,
         id: u32,
         is_fd: bool,
+
+        /// CAN-FD only: Bit Rate Switch
+        #[serde(default)]
+        brs: bool,
+
+        /// CAN-FD only: Error State Indicator
+        #[serde(default)]
+        esi: bool,
+
         data_hex: String,
     },
 }
