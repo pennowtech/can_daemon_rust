@@ -21,6 +21,14 @@ pub enum ClientRequest {
 
     /// stop receiving can frames
     Unsubscribe,
+
+    /// send a CAN/CAN-FD frame
+    SendFrame {
+        iface: String,
+        id: u32,
+        is_fd: bool,
+        data_hex: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,6 +61,14 @@ pub enum ServerResponse {
         id: u32,
         is_fd: bool,
         data_hex: String,
+    },
+
+    // Acknowledgement to CAN frame send
+    /// Note: does not guarantee successful transmission on bus
+    SendAck {
+        ok: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        error_message: Option<String>,
     },
 
     /// Generic error response (protocol, parsing, etc.)

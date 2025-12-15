@@ -35,8 +35,13 @@ async fn main() -> Result<()> {
         Arc::new(infra::discovery_netlink::NetlinkDiscovery::new());
     // let discovery = Arc::new(infra::discovery_stub::StubDiscovery::new());
 
+    // Choose CAN TX implementation:
+    // (for now, only SocketCAN TX is implemented)
+    let can_tx: Arc<dyn crate::ports::can_tx::CanTxPort> =
+        Arc::new(infra::socketcan_tx::SocketCanTx::new());
+
     // App service + event bus
-    let service = app::BridgeService::new(discovery.clone());
+    let service = app::BridgeService::new(discovery.clone(), can_tx);
 
     // Discover CAN ifaces once at startup
     let ifaces = match discovery.list_can_ifaces().await {
