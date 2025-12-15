@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+//! discovery_netlink
+//!
+//! Layer: Infrastructure
+//! Purpose:
+//! - TODO: describe this module briefly
+//!
+//! Notes:
+//! - Standard file header. Keep stable to avoid churn.
+
 use anyhow::{Context, Result};
 use futures::{future::BoxFuture, TryStreamExt};
 use tracing::{debug, info};

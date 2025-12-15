@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+//! service
+//!
+//! Layer: Application
+//! Purpose:
+//! - TODO: describe this module briefly
+//!
+//! Notes:
+//! - Standard file header. Keep stable to avoid churn.
+
 use std::sync::Arc;
 
 use tokio::sync::broadcast;
@@ -7,7 +17,7 @@ use crate::{
         frame::FrameEvent,
         protocol::{ClientRequest, ServerResponse},
     },
-    ports::discovery::DiscoveryPort,
+    ports::{can_tx::CanTxPort, discovery::DiscoveryPort},
 };
 
 /// BridgeService = application layer entry point.
@@ -19,6 +29,7 @@ use crate::{
 #[derive(Clone)]
 pub struct BridgeService {
     discovery: Arc<dyn DiscoveryPort>,
+    can_tx: Arc<dyn CanTxPort>,
     frames_tx: broadcast::Sender<FrameEvent>,
 }
 
@@ -30,11 +41,12 @@ impl std::fmt::Debug for BridgeService {
 
 impl BridgeService {
     /// Create a new service with a broadcast bus for frames.
-    pub fn new(discovery: Arc<dyn DiscoveryPort>) -> Self {
+    pub fn new(discovery: Arc<dyn DiscoveryPort>, can_tx: Arc<dyn CanTxPort>) -> Self {
         // Capacity chosen for dev; tune later. If receivers lag, they’ll drop messages.
         let (frames_tx, _) = broadcast::channel::<FrameEvent>(1024);
         Self {
             discovery,
+            can_tx,
             frames_tx,
         }
     }
@@ -72,6 +84,81 @@ impl BridgeService {
             ClientRequest::Subscribe { .. } | ClientRequest::Unsubscribe => ServerResponse::Error {
                 message: "subscribe/unsubscribe are handled by transport layer".to_string(),
             },
+
+            ClientRequest::SendFrame {
+                iface,
+                id,
+                is_fd,
+                data_hex,
+            } => {
+                let data = match hex_to_bytes(&data_hex) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return ServerResponse::SendAck {
+                            ok: false,
+                            error_message: Some(format!("bad data_hex: {e}")),
+                        }
+                    }
+                };
+
+                if let Err(e) = self
+                    .can_tx
+                    .send(iface.clone(), id, is_fd, data.clone())
+                    .await
+                {
+                    return ServerResponse::SendAck {
+                        ok: false,
+                        error_message: Some(e.to_string()),
+                    };
+                }
+
+                // Publish TX event so subscribers can see outgoing frames too (useful for UI).
+                // Timestamp set by transport layer in Step 6; here we can leave it to
+                // the socketcan adapter later. For now, we publish with ts_ms=0 (or you can set now_ms).
+                self.publish_frame(FrameEvent {
+                    ts_ms: 0,
+                    iface,
+                    dir: crate::domain::frame::Direction::Tx,
+                    id,
+                    is_fd,
+                    data,
+                });
+
+                ServerResponse::SendAck {
+                    ok: true,
+                    error_message: None,
+                }
+            }
         }
     }
+}
+
+/// Decode hex string (accepts upper/lower, optional spaces).
+fn hex_to_bytes(s: &str) -> anyhow::Result<Vec<u8>> {
+    use anyhow::{anyhow, bail};
+
+    let filtered: String = s.chars().filter(|c| !c.is_whitespace()).collect();
+    if filtered.len() % 2 != 0 {
+        bail!("hex string must have even length");
+    }
+
+    let mut out = Vec::with_capacity(filtered.len() / 2);
+    let bytes = filtered.as_bytes();
+
+    fn val(b: u8) -> Option<u8> {
+        match b {
+            b'0'..=b'9' => Some(b - b'0'),
+            b'a'..=b'f' => Some(10 + (b - b'a')),
+            b'A'..=b'F' => Some(10 + (b - b'A')),
+            _ => None,
+        }
+    }
+
+    for i in (0..bytes.len()).step_by(2) {
+        let hi = val(bytes[i]).ok_or_else(|| anyhow!("invalid hex char '{}'", bytes[i] as char))?;
+        let lo = val(bytes[i + 1])
+            .ok_or_else(|| anyhow!("invalid hex char '{}'", bytes[i + 1] as char))?;
+        out.push((hi << 4) | lo);
+    }
+    Ok(out)
 }

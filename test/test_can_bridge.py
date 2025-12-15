@@ -59,13 +59,32 @@ def main():
     resp = client.recv()
     assert resp["type"] == "subscribed"
 
+    # Send CAN frames
+    logging.info("Sending can packets...")
+    client.send(
+        {
+            "type": "send_frame",
+            "iface": resp["ifaces"][0],
+            "id": 0x123,
+            "is_fd": False,
+            "data_hex": "aeadbeef",
+        }
+    )
+    resp = client.recv()
+    assert resp["type"] == "send_ack" and resp["ok"] is True
+
     # read frames for 2 seconds
-    t0 = time.time()
+    # Wait for a frame event (rx or tx event)
+    deadline = time.time() + 12.0
+    got = False
     n = 0
-    while True:
-        obj = client.recv()
-        if obj["type"] == "frame":
+    while time.time() < deadline:
+        msg = client.recv()
+        if msg["type"] == "frame" and msg["iface"] == "can0":
+            got = True
             n += 1
+
+    assert got, "did not receive frame event after send_frame"
 
     logging.info("received %d frames in 2s (%.1f fps)", n, n / 2.0)
 

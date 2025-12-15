@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+//! socketcan_rx
+//!
+//! Layer: Infrastructure
+//! Purpose:
+//! - TODO: describe this module briefly
+//!
+//! Notes:
+//! - Standard file header. Keep stable to avoid churn.
+
 #![cfg(target_os = "linux")]
 
 use std::time::{SystemTime, UNIX_EPOCH};
