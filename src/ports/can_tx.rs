@@ -23,4 +23,3 @@ pub trait CanTxPort: Send + Sync {
         data: Vec<u8>,
     ) -> BoxFuture<'static, Result<()>>;
 }
-
