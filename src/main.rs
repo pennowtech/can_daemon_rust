@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+//! main
+//!
+//! Layer: Composition Root
+//! Purpose:
+//! - TODO: describe this module briefly
+//!
+//! Notes:
+//! - Standard file header. Keep stable to avoid churn.
+
 use anyhow::Result;
 use clap::Parser;
 use std::sync::Arc;

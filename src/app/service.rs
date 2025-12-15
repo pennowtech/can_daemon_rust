@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+//! service
+//!
+//! Layer: Application
+//! Purpose:
+//! - TODO: describe this module briefly
+//!
+//! Notes:
+//! - Standard file header. Keep stable to avoid churn.
+
 use std::sync::Arc;
 
 use tokio::sync::broadcast;

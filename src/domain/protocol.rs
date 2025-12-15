@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+//! protocol
+//!
+//! Layer: Domain
+//! Purpose:
+//! - TODO: describe this module briefly
+//!
+//! Notes:
+//! - Standard file header. Keep stable to avoid churn.
+
 use serde::{Deserialize, Serialize};
 
 /// Requests sent *to* the daemon (from clients).

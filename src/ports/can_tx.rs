@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
+//! can_tx
+//!
+//! Layer: Ports
+//! Purpose:
+//! - TODO: describe this module briefly
+//!
+//! Notes:
+//! - Standard file header. Keep stable to avoid churn.
+
 use anyhow::Result;
 use futures::future::BoxFuture;
 
