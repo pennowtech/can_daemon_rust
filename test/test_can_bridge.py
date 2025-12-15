@@ -8,64 +8,72 @@ logging.basicConfig(
 )
 
 
-def send_jsonl(sock, obj):
-    line = json.dumps(obj) + "\n"
-    logging.debug("-> %s", line.strip())
-    sock.sendall(line.encode("utf-8"))
+class JsonlClient:
+    def __init__(self, host="127.0.0.1", port=9500):
+        self.sock = socket.create_connection((host, port), timeout=3)
+        self.buf = b""
 
+    def send(self, obj):
+        line = (json.dumps(obj) + "\n").encode("utf-8")
+        logging.info("-> %s", obj)
+        self.sock.sendall(line)
 
-def recv_jsonl(sock):
-    buf = b""
-    while b"\n" not in buf:
-        chunk = sock.recv(4096)
-        if not chunk:
-            raise RuntimeError("server closed")
-        buf += chunk
-    line, _ = buf.split(b"\n", 1)
-    text = line.decode("utf-8")
-    logging.debug("<- %s", text)
-    return json.loads(text)
+    def recv(self):
+        # Keep data after newline for next call (critical for streaming)
+        while b"\n" not in self.buf:
+            chunk = self.sock.recv(4096)
+            if not chunk:
+                raise RuntimeError("server closed")
+            self.buf += chunk
+
+        line, self.buf = self.buf.split(b"\n", 1)
+        obj = json.loads(line.decode("utf-8"))
+        logging.info("<- %s", obj)
+        return obj
+
+    def close(self):
+        self.sock.close()
 
 
 def main():
-    s = socket.create_connection(("127.0.0.1", 9500), timeout=3)
+    client = JsonlClient()
 
-    hello = recv_jsonl(s)
+    hello = client.recv()
     assert hello["type"] == "hello", hello
-    send_jsonl(s, {"type": "hello_ack", "client": "py-test", "protocol": "jsonl"})
+    client.send({"type": "hello_ack", "client": "py-test", "protocol": "jsonl"})
 
-    send_jsonl(s, {"type": "list_ifaces"})
-    resp = recv_jsonl(s)
+    client.send({"type": "list_ifaces"})
+    resp = client.recv()
     assert resp["type"] == "ifaces", resp
     logging.info("ifaces=%s", resp["items"])
 
-    send_jsonl(s, {"type": "ping", "id": 9})
-    pong = recv_jsonl(s)
+    client.send({"type": "ping", "id": 9})
+    pong = client.recv()
     assert pong["type"] == "pong" and pong["id"] == 9, pong
 
     time.sleep(0.2)
 
     logging.info("Subscribing  to read can packets from iface = %s", resp["items"][0])
 
-    send_jsonl(s, {"type": "subscribe", "ifaces": [resp["items"][0]]})
-    resp = recv_jsonl(s)
+    client.send({"type": "subscribe", "ifaces": [resp["items"][0]]})
+    resp = client.recv()
     assert resp["type"] == "subscribed"
 
     # read frames for 2 seconds
     t0 = time.time()
     n = 0
-    while time.time() - t0 < 2.0:
-        obj = recv_jsonl(s)
+    while True:
+        obj = client.recv()
         if obj["type"] == "frame":
             n += 1
 
     logging.info("received %d frames in 2s (%.1f fps)", n, n / 2.0)
 
-    send_jsonl(s, {"type": "unsubscribe"})
-    resp = recv_jsonl(s)
+    client.send({"type": "unsubscribe"})
+    resp = client.recv()
     assert resp["type"] == "unsubscribed"
 
-    s.close()
+    client.close()
 
 
 if __name__ == "__main__":

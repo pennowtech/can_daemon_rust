@@ -15,6 +15,10 @@ mod ports;
 struct Args {
     #[arg(long, default_value = "127.0.0.1:9500")]
     bind: String,
+
+    /// Also run the fake generator (useful if your bus is quiet).
+    #[arg(long)]
+    fake: bool,
 }
 
 #[tokio::main]
@@ -27,13 +31,14 @@ async fn main() -> Result<()> {
     info!(bind=%args.bind, "can_bridge_daemon starting");
 
     // Choose discovery implementation:
-    let discovery = Arc::new(infra::discovery_netlink::NetlinkDiscovery::new());
+    let discovery: Arc<dyn DiscoveryPort> =
+        Arc::new(infra::discovery_netlink::NetlinkDiscovery::new());
     // let discovery = Arc::new(infra::discovery_stub::StubDiscovery::new());
 
-    // Build service
+    // App service + event bus
     let service = app::BridgeService::new(discovery.clone());
 
-    // Step 5: start fake generator on discovered ifaces
+    // Discover CAN ifaces once at startup
     let ifaces = match discovery.list_can_ifaces().await {
         Ok(v) => v,
         Err(e) => {
@@ -42,7 +47,18 @@ async fn main() -> Result<()> {
         }
     };
 
-    infra::fake_generator::start_fake_generator(service.clone(), ifaces);
+    info!(ifaces=?ifaces, "discovered ifaces");
+
+    // start REAL SocketCAN RX
+    #[cfg(target_os = "linux")]
+    {
+        infra::socketcan_rx::start_socketcan_rx(service.clone(), ifaces.clone());
+    }
+
+    // Optional: also run fake frames to validate pipeline even if bus is quiet
+    if args.fake {
+        infra::fake_generator::start_fake_generator(service.clone(), ifaces.clone());
+    }
 
     // Start TCP server
     let server = infra::transport_tcp::TcpJsonlServer::new(args.bind.parse()?);

@@ -1,7 +1,7 @@
 [
     {
         "label": "Run App",
-        "command": "RUST_LOG=info cargo run -- --bind 127.0.0.1:9500",
+        "command": "RUST_LOG=debug cargo run -- --bind 127.0.0.1:9500",
         "cwd": "$ZED_WORKTREE_ROOT",
         "shell": {
             "with_arguments": {

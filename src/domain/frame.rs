@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use tracing::{debug, info};
 
 /// Direction of a frame relative to the daemon.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -31,4 +32,30 @@ pub struct FrameEvent {
 
     /// Payload bytes. For Classic CAN: 0..=8, CAN-FD: 0..=64.
     pub data: Vec<u8>,
+}
+
+pub fn log_frame(ev: &FrameEvent) {
+    debug!("CAN Frame event: {:?}", ev);
+    info!(
+        iface = %ev.iface,
+        dir = %match ev.dir {
+            Direction::Rx => "rx",
+            Direction::Tx => "tx",
+        },
+        id = format_args!("0x{:X}", ev.id),
+        dlc = ev.data.len(),
+        data = %hex_lower(&ev.data),
+        is_fd = ev.is_fd,
+        "can_frame"
+    );
+}
+
+fn hex_lower(bytes: &[u8]) -> String {
+    const LUT: &[u8; 16] = b"0123456789abcdef";
+    let mut out = Vec::with_capacity(bytes.len() * 2);
+    for &b in bytes {
+        out.push(LUT[(b >> 4) as usize]);
+        out.push(LUT[(b & 0x0F) as usize]);
+    }
+    String::from_utf8(out).unwrap_or_default()
 }
