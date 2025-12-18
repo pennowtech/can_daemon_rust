@@ -1,0 +1,40 @@
+name: ✨ Feature request
+description: Request a new feature or enhancement
+labels: ["feature", "needs-acceptance-criteria"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for opening a feature request!  
+        Please fill out ALL sections below.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Short description of the feature.
+      placeholder: "As a <role>, I want <feature> so that <value>."
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: ✅ Acceptance Criteria
+      description: >
+        Provide a checklist of observable behaviours that must be true
+        for this feature to be considered done.
+      value: |
+        - [ ] All issue-specific Acceptance Criteria are checked off
+        - [ ] Tests are added/updated and passing (unit/integration where relevant)
+        - [ ] CI pipeline is green
+        - [ ] Code is reviewed and approved
+        - [ ] User-facing changes are documented (README / docs / changelog)
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Links, screenshots, design docs, etc.

@@ -62,10 +62,10 @@ impl CanBridge for GrpcAdapter {
         let resp = self.service.handle(ClientRequest::Ping { id }).await;
 
         match resp {
-            crate::domain::protocol::ServerResponse::Pong { id } => {
+            crate::domain::protocol::DaemonResponse::Pong { id } => {
                 Ok(Response::new(pb::PingResp { id }))
             }
-            crate::domain::protocol::ServerResponse::Error { message } => {
+            crate::domain::protocol::DaemonResponse::Error { message } => {
                 Err(Status::internal(message))
             }
             other => Err(Status::internal(format!(
@@ -81,10 +81,10 @@ impl CanBridge for GrpcAdapter {
         let resp = self.service.handle(ClientRequest::ListIfaces).await;
 
         match resp {
-            crate::domain::protocol::ServerResponse::Ifaces { items } => {
+            crate::domain::protocol::DaemonResponse::Ifaces { items } => {
                 Ok(Response::new(pb::IfacesResp { items }))
             }
-            crate::domain::protocol::ServerResponse::Error { message } => {
+            crate::domain::protocol::DaemonResponse::Error { message } => {
                 Err(Status::internal(message))
             }
             other => Err(Status::internal(format!(
@@ -111,13 +111,13 @@ impl CanBridge for GrpcAdapter {
             .await;
 
         match resp {
-            crate::domain::protocol::ServerResponse::SendAck { ok, error_message } => {
+            crate::domain::protocol::DaemonResponse::SendAck { ok, error_message } => {
                 Ok(Response::new(pb::SendAck {
                     ok,
                     error: error_message.unwrap_or_default(), //in proto file, it's error string
                 }))
             }
-            crate::domain::protocol::ServerResponse::Error { message } => {
+            crate::domain::protocol::DaemonResponse::Error { message } => {
                 Ok(Response::new(pb::SendAck {
                     ok: false,
                     error: message,
